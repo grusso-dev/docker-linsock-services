@@ -1,0 +1,35 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sql_server
+    environment:
+      SA_PASSWORD: "${SA_PASSWORD}"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - ./data/sqlserver/sql_data:/var/opt/mssql
+      - ${SQL_BACKUP_PATH}:/var/opt/mssql/backups
+    ports:
+      - "1433:1433"
+    networks:
+      - sql-network
+
+  sql-backup:
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    container_name: sql_backup
+    environment:
+      - SA_PASSWORD=${SA_PASSWORD}
+      - SQL_USER=${SQL_USER}
+      - SQL_DB=${SQL_DB}
+      - SQL_SERVER=${SQL_SERVER}
+    volumes:
+      - ${SQL_BACKUP_PATH}:/backups
+    depends_on:
+      - sqlserver
+    networks:
+      - sql-network
+
+networks:
+  sql-network:
+    driver: bridge
