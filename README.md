@@ -37,7 +37,7 @@ docker-linsock-services/
 │   │   └── nginx/
 │   │       └── default.conf
 │   └── php/
-│       └── dockerfile
+│       └── Dockerfile
 ├── dkr-sql/
 │   ├── docker-compose.yml
 │   └── backup/
