@@ -2,7 +2,7 @@
 
 Este directorio contiene la configuración necesaria para levantar un entorno PHP con Nginx utilizando Docker Compose.
 
-- **php**: se construye desde `php/Dockerfile` e instala PHP-FPM 8.4 con extensiones comunes y soporte para SQL Server.
+- **php**: se construye desde `php/Dockerfile` e instala PHP-FPM 8.3 con extensiones comunes y soporte para SQL Server.
 - **nginx**: sirve la aplicación y expone el puerto **8080** en el host.
 
 El código de tu aplicación se monta en `/var/www` dentro de los contenedores usando la variable `PHP_APP_PATH` definida en el archivo `.env` local.
@@ -13,7 +13,7 @@ El código de tu aplicación se monta en `/var/www` dentro de los contenedores u
 dkr-php/
 ├── docker-compose.yml  # orquesta los servicios PHP y Nginx
 ├── php/
-│   └── dockerfile      # imagen personalizada con extensiones
+│   └── Dockerfile      # imagen personalizada con extensiones
 ├── data/
 │   └── nginx/
 │       └── default.conf  # configuración de Nginx

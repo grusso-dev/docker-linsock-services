@@ -1,5 +1,5 @@
-# Imagen base de PHP 8.4 con FPM en Alpine
-FROM php:8.4-fpm-alpine
+# Imagen base de PHP 8.3 con FPM en Alpine
+FROM php:8.3-fpm-alpine
 
 # Aceptar EULA de Microsoft
 ENV ACCEPT_EULA=Y
