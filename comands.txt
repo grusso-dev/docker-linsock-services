@@ -1,13 +1,3 @@
-<<<<<<< HEAD
-Comandos utiles de Linux:
-Espacio en los directorios: 
-comandos de docker utiles
- 
-Compilar Contenedores: docker compose build --no-cache
-Iniciar Contenedores:docker compose up -d
-Iniciay y construir contenedores: docker compose up --build
-Ingresar a linea de comandos de un contenedor: sudo docker exec -it php_app /bin/bash
-=======
 comandos de docker utiles:
 🚢 1. Comandos básicos de contenedores
 | Comando                             | Descripción                                              |
@@ -48,12 +38,14 @@ comandos de docker utiles:
 | `docker system prune`      | Limpia todo lo no utilizado (contenedores detenidos, redes sin usar, imágenes dangling, etc.). |
 
 🐳 5. Docker Compose
-| Comando                  | Descripción                                                               |
-| ------------------------ | ------------------------------------------------------------------------- |
-| `docker compose up -d`   | Levanta los servicios definidos en `docker-compose.yml` en segundo plano. |
-| `docker compose down`    | Detiene y elimina contenedores, redes y volúmenes definidos.              |
-| `docker compose logs -f` | Muestra los logs en tiempo real de los servicios.                         |
-| `docker compose ps`      | Lista los servicios levantados.                                           |
+| Comando                           | Descripción                                                               |
+| ------------------------          | ------------------------------------------------------------------------- |
+| `docker compose up -d`            | Levanta los servicios definidos en `docker-compose.yml` en segundo plano. |
+| `docker compose down`             | Detiene y elimina contenedores, redes y volúmenes definidos.              |
+| `docker compose logs -f`          | Muestra los logs en tiempo real de los servicios.                         |
+| `docker compose ps`               | Lista los servicios levantados.                                           |
+| `docker compose build --no-cache` | Compilar Contenedores.                                           |
+| `docker compose up --build`       | Iniciay y construir contenedores.                                           |
 
 🧹 6. Comandos masivos y de limpieza
 | Comando                                     | Descripción                                                                                                                                                                 |
@@ -65,7 +57,10 @@ comandos de docker utiles:
 | `docker network rm $(docker network ls -q)` | Elimina **todas las redes personalizadas**. *(Ojo: no borra redes default como `bridge` y `host`)*                                                                          |
 | `docker restart $(docker ps -q)`            | Reinicia **todos los contenedores en ejecución**.                                                                                                                           |
 | `docker system prune -a`                    | Elimina **todo lo no utilizado**: contenedores detenidos, redes no utilizadas, imágenes sin tag y volúmenes dangling (añadí `-a` para borrar todas las imágenes no usadas). |
->>>>>>> aada84846744dd91b808a412cc10d90a0b020592
 
+
+Comandos utiles de Linux:
+`df -h` Espacio en los directorios
+`sudo docker exec -it php_app /bin/bash` Ingresar a linea de comandos de un contenedor
 
 
