@@ -64,3 +64,8 @@ Comandos utiles de Linux:
 `sudo docker exec -it php_app /bin/bash` Ingresar a linea de comandos de un contenedor
 
 
+
+
+
+
+
