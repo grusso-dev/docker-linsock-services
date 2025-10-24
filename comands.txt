@@ -1,2 +1,11 @@
-comandos de docker utiles:
+Comandos utiles de Linux:
+Espacio en los directorios: 
+comandos de docker utiles
  
+Compilar Contenedores: docker compose build --no-cache
+Iniciar Contenedores:docker compose up -d
+Iniciay y construir contenedores: docker compose up --build
+Ingresar a linea de comandos de un contenedor: sudo docker exec -it php_app /bin/bash
+
+
+
