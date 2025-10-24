@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Comandos utiles de Linux:
 Espacio en los directorios: 
 comandos de docker utiles
@@ -6,6 +7,65 @@ Compilar Contenedores: docker compose build --no-cache
 Iniciar Contenedores:docker compose up -d
 Iniciay y construir contenedores: docker compose up --build
 Ingresar a linea de comandos de un contenedor: sudo docker exec -it php_app /bin/bash
+=======
+comandos de docker utiles:
+🚢 1. Comandos básicos de contenedores
+| Comando                             | Descripción                                              |
+| ----------------------------------- | -------------------------------------------------------- |
+| `docker ps`                         | Lista los contenedores en ejecución.                     |
+| `docker ps -a`                      | Lista todos los contenedores (en ejecución y detenidos). |
+| `docker start <contenedor>`         | Inicia un contenedor detenido.                           |
+| `docker stop <contenedor>`          | Detiene un contenedor en ejecución.                      |
+| `docker restart <contenedor>`       | Reinicia un contenedor.                                  |
+| `docker rm <contenedor>`            | Elimina un contenedor detenido.                          |
+| `docker exec -it <contenedor> bash` | Accede a una terminal interactiva dentro del contenedor. |
+
+📦 2. Comandos de imágenes
+| Comando                            | Descripción                                                 |
+| ---------------------------------- | ----------------------------------------------------------- |
+| `docker images`                    | Lista todas las imágenes descargadas.                       |
+| `docker pull <imagen>`             | Descarga una imagen del registry (por ejemplo, Docker Hub). |
+| `docker build -t <nombre>:<tag> .` | Construye una imagen usando un Dockerfile.                  |
+| `docker rmi <imagen>`              | Elimina una imagen.                                         |
+| `docker image prune`               | Limpia imágenes sin usar.                                   |
+
+🗂️ 3. Volúmenes y redes
+| Comando                        | Descripción                  |
+| ------------------------------ | ---------------------------- |
+| `docker volume ls`             | Lista los volúmenes.         |
+| `docker volume rm <volumen>`   | Elimina un volumen.          |
+| `docker network ls`            | Lista las redes.             |
+| `docker network inspect <red>` | Muestra detalles de una red. |
+
+
+⚙️ 4. Utilidades
+| Comando                    | Descripción                                                                                    |
+| -------------------------- | ---------------------------------------------------------------------------------------------- |
+| `docker logs <contenedor>` | Muestra los logs de un contenedor.                                                             |
+| `docker stats`             | Muestra estadísticas de uso de recursos de contenedores activos.                               |
+| `docker inspect <objeto>`  | Devuelve la configuración detallada de un contenedor o imagen.                                 |
+| `docker system df`         | Muestra uso de disco por imágenes, contenedores y volúmenes.                                   |
+| `docker system prune`      | Limpia todo lo no utilizado (contenedores detenidos, redes sin usar, imágenes dangling, etc.). |
+
+🐳 5. Docker Compose
+| Comando                  | Descripción                                                               |
+| ------------------------ | ------------------------------------------------------------------------- |
+| `docker compose up -d`   | Levanta los servicios definidos en `docker-compose.yml` en segundo plano. |
+| `docker compose down`    | Detiene y elimina contenedores, redes y volúmenes definidos.              |
+| `docker compose logs -f` | Muestra los logs en tiempo real de los servicios.                         |
+| `docker compose ps`      | Lista los servicios levantados.                                           |
+
+🧹 6. Comandos masivos y de limpieza
+| Comando                                     | Descripción                                                                                                                                                                 |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docker stop $(docker ps -q)`               | Detiene **todos los contenedores en ejecución**.                                                                                                                            |
+| `docker rm $(docker ps -aq)`                | Elimina **todos los contenedores detenidos**.                                                                                                                               |
+| `docker rmi $(docker images -q)`            | Elimina **todas las imágenes**.                                                                                                                                             |
+| `docker volume rm $(docker volume ls -q)`   | Elimina **todos los volúmenes**.                                                                                                                                            |
+| `docker network rm $(docker network ls -q)` | Elimina **todas las redes personalizadas**. *(Ojo: no borra redes default como `bridge` y `host`)*                                                                          |
+| `docker restart $(docker ps -q)`            | Reinicia **todos los contenedores en ejecución**.                                                                                                                           |
+| `docker system prune -a`                    | Elimina **todo lo no utilizado**: contenedores detenidos, redes no utilizadas, imágenes sin tag y volúmenes dangling (añadí `-a` para borrar todas las imágenes no usadas). |
+>>>>>>> aada84846744dd91b808a412cc10d90a0b020592
 
 
 
