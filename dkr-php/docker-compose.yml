@@ -5,7 +5,10 @@ services:
       dockerfile: Dockerfile
     container_name: php_app
     volumes:
-      - ${PHP_APP_PATH}:/var/www
+      #- ${PHP_APP_PATH}:/var/www
+      - ${PHP_APP_PATH_HME}:/var/www/homepage
+      - ${PHP_APP_PATH_PRD}:/var/www/lskprd
+      - ${PHP_APP_PATH_DEV}:/var/www/lskdev/public
     expose:
       - 9000
     networks:
@@ -17,7 +20,10 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ${PHP_APP_PATH}:/var/www
+      #- ${PHP_APP_PATH}:/var/www
+      - ${PHP_APP_PATH_HME}:/var/www/homepage
+      - ${PHP_APP_PATH_PRD}:/var/www/lskprd
+      - ${PHP_APP_PATH_DEV}:/var/www/lskdev/public
       - ./data/nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - php
