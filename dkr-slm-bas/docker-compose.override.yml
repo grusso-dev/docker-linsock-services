@@ -1,0 +1,7 @@
+services:
+  slim:
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/vendor
+    ports:
+      - "58080:80"

@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  ftp:
+    build: .
+    container_name: ftp_grusso
+    restart: always
+    ports:
+      - "21:21"
+      - "21000-21010:21000-21010"
+    environment:
+      - FTP_USER=grusso
+      - FTP_PASS=ctxLNX2626...
+      - PASV_ADDRESS=127.0.0.1   # cámbialo por tu IP pública si accedes desde fuera
+      - PASV_MIN_PORT=21000
+      - PASV_MAX_PORT=21010
+      - FILE_OPEN_MODE=0666
+      - LOCAL_UMASK=022
+      - REVERSE_LOOKUP_ENABLE=NO
+      - ALLOW_WRITEABLE_CHROOT=YES
+    volumes:
+      - ${PHP_APP_PATH}:/home/vsftpd/grusso

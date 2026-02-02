@@ -1,0 +1,9 @@
+services:
+  slim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: slim-app
+    ports:
+      - "58080:80"
+    restart: always

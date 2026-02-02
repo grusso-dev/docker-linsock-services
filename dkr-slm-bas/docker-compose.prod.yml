@@ -1,0 +1,5 @@
+services:
+  slim:
+    ports:
+      - "80:80"
+    volumes: []
