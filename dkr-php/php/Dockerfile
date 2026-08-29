@@ -1,5 +1,5 @@
 # Imagen base de PHP 8.4 con FPM en Alpine
-FROM php:8.4-fpm-alpine
+FROM php:8.4-fpm-alpine3.24
 
 ARG TARGETARCH
 
@@ -40,7 +40,7 @@ RUN curl -O https://download.microsoft.com/download/7/6/d/76de322a-d860-4894-994
 
 
 # Copiar el instalador de extensiones PHP desde la imagen oficial
-COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/install-php-extensions
+COPY --from=ghcr.io/mlocati/php-extension-installer:2.11.12 /usr/bin/install-php-extensions /usr/bin/install-php-extensions
 
 # Asignar permisos y ejecutar la instalación de extensiones
 RUN chmod +x /usr/bin/install-php-extensions \

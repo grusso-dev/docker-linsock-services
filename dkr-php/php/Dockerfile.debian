@@ -29,7 +29,7 @@ RUN apt-get update && ACCEPT_EULA=Y apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # PHP extensions installer
-COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/install-php-extensions
+COPY --from=ghcr.io/mlocati/php-extension-installer:2.11.12 /usr/bin/install-php-extensions /usr/bin/install-php-extensions
 
 # Extensiones PHP (TCPDF + SQL Server)
 RUN chmod +x /usr/bin/install-php-extensions \

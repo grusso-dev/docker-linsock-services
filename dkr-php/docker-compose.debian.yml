@@ -16,7 +16,7 @@ services:
       - app-network
 
   nginx:
-    image: nginx:alpine
+    image: nginx:stable-alpine3.24
     container_name: nginx_web
     ports:
       - "8080:80"

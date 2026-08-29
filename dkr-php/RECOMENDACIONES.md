@@ -37,3 +37,11 @@ El prefijo `zz-` permite que el archivo se cargue después de la configuración 
 ### Validación necesaria
 
 El valor `pm.max_children = 5` es un punto de partida. Antes de adoptarlo en producción se debe medir la memoria promedio de los procesos PHP-FPM y probar la concurrencia esperada. Un límite demasiado alto puede agotar la memoria; uno demasiado bajo puede generar esperas durante picos de tráfico.
+
+## Fijar imágenes por digest
+
+Estado: **pendiente, no aplicado**.
+
+Las imágenes base ya fijan la familia de PHP, la distribución del sistema operativo y la versión del instalador de extensiones. Como siguiente nivel de reproducibilidad se pueden agregar digests SHA-256 a PHP, Nginx y `php-extension-installer`.
+
+Los digests deben obtenerse y validarse para la plataforma AMD64 después de ejecutar builds y pruebas completas. Se recomienda acompañar esta medida con Renovate o Dependabot para proponer actualizaciones periódicas; de lo contrario, las imágenes pueden quedar congeladas y perder correcciones de seguridad.
