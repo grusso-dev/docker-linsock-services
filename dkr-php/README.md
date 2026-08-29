@@ -75,7 +75,21 @@ Las carpetas `storage/app/uploads` sólo son obligatorias si las aplicaciones ut
 
 ## Configurar `.env`
 
-El archivo `.env` controla qué carpetas del host se montan en los contenedores:
+El repositorio incluye `.env.example` como plantilla, pero `.env` es local y está ignorado por Git. Esto permite usar rutas y tags diferentes en cada servidor sin modificar archivos versionados ni exponer accidentalmente credenciales futuras.
+
+En Linux, macOS o WSL2, crea la copia local con:
+
+```bash
+cp .env.example .env
+```
+
+En PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Después edita `.env`. El archivo controla qué carpetas del host se montan y qué imágenes PHP utiliza cada entorno:
 
 ```dotenv
 PHP_APP_PATH_HME=/opt/web/homepage
@@ -84,6 +98,8 @@ PHP_APP_PATH_DEV=/var/lsk/grn_sysdev
 PHP_IMAGE_PRODUCTION_TAG=1.0.0
 PHP_IMAGE_STAGING_TAG=1.1.0-rc1
 ```
+
+No agregues `.env` al repositorio. Si en el futuro contiene contraseñas, tokens o claves, deben permanecer únicamente en la instalación local o trasladarse a un mecanismo específico de secretos.
 
 | Variable | Contenido | Acceso desde Nginx | Acceso desde PHP |
 | --- | --- | --- | --- |
