@@ -1,6 +1,13 @@
 # Imagen base de PHP 8.4 con FPM en Alpine
 FROM php:8.4-fpm-alpine
 
+ARG TARGETARCH
+
+RUN if [ "$TARGETARCH" != "amd64" ]; then \
+        echo "ERROR: esta imagen sólo soporta linux/amd64"; \
+        exit 1; \
+    fi
+
 # Aceptar EULA de Microsoft
 ENV ACCEPT_EULA=Y
 

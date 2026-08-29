@@ -22,6 +22,17 @@ dkr-php/
 
 Estos archivos permiten construir la imagen de PHP, configurar Nginx y levantar el entorno completo con Docker Compose.
 
+## Requisitos de plataforma
+
+Este entorno utiliza contenedores Linux AMD64 debido a las dependencias de Microsoft ODBC incluidas en la imagen PHP.
+
+Plataformas soportadas:
+
+- Linux con procesador Intel/AMD de 64 bits.
+- Windows con procesador Intel/AMD de 64 bits, Docker Desktop, WSL2 y contenedores Linux.
+
+ARM64 no está soportado oficialmente por este proyecto. En un host ARM, Docker puede intentar ejecutar PHP mediante emulación porque Compose declara `platform: linux/amd64`, pero ese escenario queda fuera del alcance soportado.
+
 ## Uso
 
 1. Ajusta `PHP_APP_PATH_HME`, `PHP_APP_PATH_DEV` y `PHP_APP_PATH_PRD` en `.env`. Las rutas DEV y PRD deben apuntar a la raíz de cada aplicación.
