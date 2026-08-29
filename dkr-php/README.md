@@ -81,6 +81,8 @@ El archivo `.env` controla qué carpetas del host se montan en los contenedores:
 PHP_APP_PATH_HME=/opt/web/homepage
 PHP_APP_PATH_PRD=/opt/web/lskprd
 PHP_APP_PATH_DEV=/var/lsk/grn_sysdev
+PHP_IMAGE_PRODUCTION_TAG=1.0.0
+PHP_IMAGE_STAGING_TAG=1.1.0-rc1
 ```
 
 | Variable | Contenido | Acceso desde Nginx | Acceso desde PHP |
@@ -88,6 +90,10 @@ PHP_APP_PATH_DEV=/var/lsk/grn_sysdev
 | `PHP_APP_PATH_HME` | Página principal estática | Sólo lectura | No se monta |
 | `PHP_APP_PATH_PRD` | Aplicación de producción | Sólo lectura | Lectura y escritura en `php-production` |
 | `PHP_APP_PATH_DEV` | Aplicación de staging | Sólo lectura | Lectura y escritura en `php-staging` |
+
+Los tags `PHP_IMAGE_PRODUCTION_TAG` y `PHP_IMAGE_STAGING_TAG` controlan qué versión del runtime PHP usa cada entorno. El Compose Alpine genera imágenes `dkr-php-alpine:<tag>` y el Compose Debian genera `dkr-php-debian:<tag>`, evitando mezclar imágenes construidas sobre sistemas base diferentes.
+
+Usa tags nuevos e inmutables para cada candidato, por ejemplo `1.2.0-rc1`. No reutilices un tag que ya haya sido aprobado porque dificultaría comprobar qué imagen está ejecutándose y volver a una versión anterior.
 
 ### Ejemplo para Linux
 
@@ -167,10 +173,11 @@ Validar la configuración resuelta:
 docker compose config
 ```
 
-Construir e iniciar:
+Primera construcción e inicio:
 
 ```bash
-docker compose up -d --build
+docker compose build php-production php-staging
+docker compose up -d
 ```
 
 ### Debian
@@ -181,10 +188,11 @@ Validar la configuración resuelta:
 docker compose -f docker-compose.debian.yml config
 ```
 
-Construir e iniciar:
+Primera construcción e inicio:
 
 ```bash
-docker compose -f docker-compose.debian.yml up -d --build
+docker compose -f docker-compose.debian.yml build php-production php-staging
+docker compose -f docker-compose.debian.yml up -d
 ```
 
 Para cambiar de variante, primero detén la que está activa con su mismo archivo Compose:
@@ -198,6 +206,82 @@ o:
 ```bash
 docker compose -f docker-compose.debian.yml down
 ```
+
+## Publicar una nueva imagen PHP
+
+Este procedimiento se utiliza cuando cambian los Dockerfiles, `php/extensions.txt`, PHP, Composer, ODBC u otra dependencia incluida en la imagen. Los cambios normales del código de las aplicaciones no necesitan reconstruirla porque el código se monta desde el host.
+
+### 1. Preparar el candidato de staging
+
+Asigna un tag nuevo únicamente a staging en `.env`:
+
+```dotenv
+PHP_IMAGE_PRODUCTION_TAG=1.0.0
+PHP_IMAGE_STAGING_TAG=1.1.0-rc1
+```
+
+Construye e inicia sólo la pareja de staging:
+
+```bash
+docker compose build --pull php-staging
+docker compose up -d php-staging nginx-staging
+```
+
+Producción continúa utilizando `dkr-php-alpine:1.0.0`. Con el Compose Debian, los mismos tags se aplican al repositorio local `dkr-php-debian`.
+
+### 2. Validar staging
+
+Realiza las comprobaciones en:
+
+```text
+http://localhost:8081/lskdev/
+```
+
+Puedes consultar las imágenes asociadas a los servicios con:
+
+```bash
+docker compose images
+```
+
+### 3. Promover la imagen aprobada
+
+Después de la aprobación, asigna a producción exactamente el tag probado:
+
+```dotenv
+PHP_IMAGE_PRODUCTION_TAG=1.1.0-rc1
+PHP_IMAGE_STAGING_TAG=1.1.0-rc1
+```
+
+Recrea únicamente la pareja de producción sin reconstruir la imagen:
+
+```bash
+docker compose up -d --pull never --no-build php-production nginx-production
+```
+
+`--pull never --no-build`, junto con `pull_policy: never` en los servicios PHP, garantiza que producción utilice la imagen local que ya fue validada en staging. Si esa imagen no existe en el host, el comando falla en lugar de construirla o intentar descargar otra con el mismo nombre.
+
+### 4. Preparar la siguiente versión
+
+Mantén producción en el tag aprobado y cambia solamente staging:
+
+```dotenv
+PHP_IMAGE_PRODUCTION_TAG=1.1.0-rc1
+PHP_IMAGE_STAGING_TAG=1.2.0-rc1
+```
+
+### Rollback
+
+Conserva el tag anterior en el host. Para volver atrás, restaura su valor y recrea producción sin build:
+
+```dotenv
+PHP_IMAGE_PRODUCTION_TAG=1.0.0
+```
+
+```bash
+docker compose up -d --pull never --no-build php-production nginx-production
+```
+
+Si utilizas Debian, agrega `-f docker-compose.debian.yml` a todos los comandos del procedimiento.
 
 ## Acceso
 
@@ -228,6 +312,8 @@ Nginx los publica como contenido estático en:
 
 - Producción: `http://IP_O_HOST:8080/lskprd/uploads/<archivo>`
 - Staging: `http://IP_O_HOST:8081/lskdev/uploads/<archivo>`
+
+Ambos Nginx permiten un cuerpo HTTP máximo de `20m` mediante `client_max_body_size`. El límite incluye el archivo y los demás campos del formulario; una petición mayor recibe `413 Request Entity Too Large` antes de llegar a PHP. La aplicación y PHP pueden aplicar límites iguales o menores, pero no deberían aceptar un tamaño mayor que Nginx.
 
 Nginx monta el código como solo lectura, desactiva el listado de directorios y bloquea archivos ocultos y extensiones PHP dentro de uploads. PHP conserva acceso de escritura porque es quien recibe y guarda el archivo.
 
@@ -280,10 +366,11 @@ docker compose exec php-production composer install --working-dir=/var/www/lskpr
 
 Si utilizas Debian, agrega `-f docker-compose.debian.yml` después de `docker compose`, como se indicó al elegir la variante.
 
-Los cambios en los archivos montados desde el host se reflejan sin reconstruir la imagen. Debes reconstruir cuando cambien los Dockerfiles o las dependencias instaladas en la imagen:
+Los cambios en los archivos montados desde el host se reflejan sin reconstruir la imagen. Cuando cambie el runtime PHP, sigue el procedimiento de staging y promoción; evita `docker compose up -d --build` sin indicar servicios porque construiría también producción.
 
 ```bash
-docker compose up -d --build
+docker compose build --pull php-staging
+docker compose up -d php-staging nginx-staging
 ```
 
 ## Detención y actualización
@@ -300,12 +387,11 @@ Detener y eliminar contenedores y redes del proyecto:
 docker compose down
 ```
 
-Actualizar imágenes base y reconstruir:
+Actualizar únicamente los Nginx:
 
 ```bash
 docker compose pull nginx-production nginx-staging
-docker compose build --pull
-docker compose up -d
+docker compose up -d nginx-production nginx-staging
 ```
 
 `docker compose down` no elimina las aplicaciones porque son carpetas del host montadas mediante bind mounts. Este proyecto no define volúmenes Docker con datos persistentes.
@@ -314,7 +400,7 @@ docker compose up -d
 
 ### El puerto ya está ocupado
 
-Si Compose informa que 8080 o 8081 ya está en uso, detén el proceso o stack que lo ocupa. También puedes cambiar el lado izquierdo del mapeo en ambos archivos Compose, por ejemplo `9081:81`; en ese caso actualiza las URLs configuradas en la aplicación.
+Si Compose informa que 8080 o 8081 ya está en uso, detén el proceso o stack que lo ocupa. También puedes cambiar el lado izquierdo del mapeo en ambos archivos Compose, por ejemplo `9081:80`; en ese caso actualiza las URLs configuradas en la aplicación.
 
 ### Nginx devuelve 404
 

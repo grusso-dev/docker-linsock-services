@@ -1,6 +1,8 @@
 services:
   php-production:
     platform: linux/amd64
+    image: dkr-php-alpine:${PHP_IMAGE_PRODUCTION_TAG}
+    pull_policy: never
     build:
       context: ./php
       dockerfile: Dockerfile
@@ -20,6 +22,8 @@ services:
 
   php-staging:
     platform: linux/amd64
+    image: dkr-php-alpine:${PHP_IMAGE_STAGING_TAG}
+    pull_policy: never
     build:
       context: ./php
       dockerfile: Dockerfile
