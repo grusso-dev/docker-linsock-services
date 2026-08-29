@@ -34,13 +34,9 @@ No deben levantarse ambas variantes simultáneamente porque las dos intentan pub
 
 Todos los comandos de este documento que muestran `docker compose` sin `-f` corresponden a Alpine. Si elegiste Debian, conserva `-f docker-compose.debian.yml` en cada comando de administración, por ejemplo `docker compose -f docker-compose.debian.yml ps`.
 
-Las extensiones instaladas no son completamente idénticas:
+Ambas imágenes consumen la lista común `php/extensions.txt`: `bcmath`, `ds`, `exif`, `fileinfo`, `gd`, `intl`, `mbstring`, `opcache`, `pcntl`, `pdo_sqlsrv`, `redis`, `sqlsrv` y `zip`. Elegir Alpine o Debian cambia el sistema operativo base, pero no las extensiones PHP declaradas por el proyecto.
 
-- Ambas incluyen `bcmath`, `exif`, `gd`, `intl`, `opcache`, `pcntl`, `pdo_sqlsrv`, `redis`, `sqlsrv` y `zip`.
-- Alpine agrega `ds`.
-- Debian instala explícitamente `mbstring` y `fileinfo`.
-
-Antes de elegir una variante, comprueba las extensiones requeridas por la aplicación con `composer check-platform-reqs`.
+Para agregar o quitar una extensión, modifica únicamente `php/extensions.txt`, reconstruye ambas variantes y comprueba los requisitos de la aplicación con `composer check-platform-reqs`.
 
 ## Requisitos
 

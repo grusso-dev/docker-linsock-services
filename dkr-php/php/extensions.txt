@@ -1,0 +1,13 @@
+bcmath
+ds
+exif
+fileinfo
+gd
+intl
+mbstring
+opcache
+pcntl
+pdo_sqlsrv
+redis
+sqlsrv
+zip

@@ -38,21 +38,15 @@ COPY --from=ghcr.io/mlocati/php-extension-installer:2.11.12 /usr/bin/install-php
 # Composer se conserva para administrar dependencias bajo demanda.
 COPY --from=composer:2.10.2 /usr/bin/composer /usr/local/bin/composer
 
+# Lista común de extensiones para las variantes Alpine y Debian.
+COPY extensions.txt /tmp/php-extensions.txt
+
 # Asignar permisos y ejecutar la instalación de extensiones
 RUN chmod +x /usr/bin/install-php-extensions \
     && sync \
-    && install-php-extensions \
-        bcmath \
-        ds \
-        exif \
-        gd \
-        intl \
-        opcache \
-        pcntl \
-        pdo_sqlsrv \
-        redis \
-        sqlsrv \
-        zip
+    && set -- $(cat /tmp/php-extensions.txt) \
+    && install-php-extensions "$@" \
+    && rm -f /tmp/php-extensions.txt
 
 # Definir el directorio de trabajo
 WORKDIR /var/www

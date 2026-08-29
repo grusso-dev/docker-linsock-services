@@ -25,20 +25,13 @@ COPY --from=ghcr.io/mlocati/php-extension-installer:2.11.12 /usr/bin/install-php
 # Composer se conserva para administrar dependencias bajo demanda.
 COPY --from=composer:2.10.2 /usr/bin/composer /usr/local/bin/composer
 
+# Lista común de extensiones para las variantes Alpine y Debian.
+COPY extensions.txt /tmp/php-extensions.txt
+
 # Extensiones PHP (TCPDF + SQL Server)
 RUN chmod +x /usr/bin/install-php-extensions \
-    && install-php-extensions \
-        bcmath \
-        exif \
-        gd \
-        intl \
-        mbstring \
-        fileinfo \
-        opcache \
-        pcntl \
-        pdo_sqlsrv \
-        sqlsrv \
-        zip \
-        redis
+    && set -- $(cat /tmp/php-extensions.txt) \
+    && install-php-extensions "$@" \
+    && rm -f /tmp/php-extensions.txt
 
 WORKDIR /var/www
