@@ -1,3 +1,11 @@
+# Política común de logs para impedir que los archivos administrados por Docker
+# crezcan indefinidamente. Conserva hasta 3 segmentos de 10 MB por contenedor.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   php-production:
     platform: linux/amd64
@@ -7,6 +15,7 @@ services:
       context: ./php
       dockerfile: Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - ${PHP_APP_PATH_PRD}:/var/www/lskprd
     expose:
@@ -28,6 +37,7 @@ services:
       context: ./php
       dockerfile: Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - ${PHP_APP_PATH_DEV}:/var/www/lskdev
     expose:
@@ -39,6 +49,7 @@ services:
   nginx-production:
     image: nginx:stable-alpine3.24
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "8080:80"
     volumes:
@@ -60,6 +71,7 @@ services:
   nginx-staging:
     image: nginx:stable-alpine3.24
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "8081:80"
     volumes:

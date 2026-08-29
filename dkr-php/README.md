@@ -357,6 +357,16 @@ Consultar logs:
 docker compose logs -f nginx-production php-production nginx-staging php-staging
 ```
 
+Los cuatro servicios usan el driver `json-file` con rotación explícita: cada contenedor conserva como máximo 3 segmentos de 10 MB, aproximadamente 30 MB por servicio y 120 MB para el stack completo. Cuando se alcanza el límite, Docker elimina el segmento más antiguo.
+
+La rotación limita el uso de disco y no reserva 120 MB por adelantado. Los archivos son administrados internamente por Docker: consúltalos mediante `docker compose logs` y no los edites directamente en el directorio de datos del motor.
+
+Después de modificar esta política, recrea los servicios para que los nuevos contenedores la reciban:
+
+```bash
+docker compose up -d --force-recreate
+```
+
 Comprobar Nginx:
 
 ```text
