@@ -55,3 +55,13 @@ Las aplicaciones pueden guardar archivos en `storage/app/uploads`. Nginx los pub
 - PRD: `http://localhost:8080/lskprd/uploads/<archivo>`
 
 Nginx monta las aplicaciones como solo lectura y rechaza archivos con extensiones PHP dentro de estas rutas. La aplicación sigue siendo responsable de validar el tamaño, el tipo y el nombre de cada archivo subido.
+
+## Estado de los servicios
+
+PHP-FPM y Nginx tienen healthchecks y una política `restart: unless-stopped`. Nginx espera a que PHP-FPM esté saludable antes de iniciar. El estado HTTP de Nginx se puede consultar en:
+
+```text
+http://localhost:8080/health
+```
+
+Una respuesta `200 OK` con el texto `ok` confirma que Nginx está activo. El estado detallado de ambos contenedores puede consultarse con `docker compose ps`.

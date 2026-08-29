@@ -53,3 +53,11 @@ Estado: **pendiente, no aplicado**.
 Actualmente PHP monta la raíz de las aplicaciones con permisos de lectura y escritura porque los frameworks pueden necesitar guardar uploads, cachés y logs. Como endurecimiento futuro, se recomienda montar el código como solo lectura y habilitar escritura únicamente en los directorios que realmente la necesiten, por ejemplo `storage`, `bootstrap/cache`, `var/cache`, `var/log` o un directorio específico de uploads.
 
 Esta restricción debe aplicarse después de identificar y probar los directorios de escritura de cada aplicación. Una configuración incompleta podría impedir uploads, generación de caché o escritura de logs.
+
+## Activar y ajustar php.ini de producción
+
+Estado: **pendiente, no aplicado**.
+
+Antes de utilizar el stack en producción se recomienda activar `php.ini-production` y definir valores propios para `memory_limit`, `upload_max_filesize`, `post_max_size`, `max_execution_time`, `display_errors` y `log_errors`.
+
+Los límites deben establecerse después de conocer el tamaño real de los uploads, la memoria disponible y el tiempo esperado de las operaciones. Aplicar valores genéricos podría bloquear cargas válidas o permitir que una petición consuma demasiados recursos.
