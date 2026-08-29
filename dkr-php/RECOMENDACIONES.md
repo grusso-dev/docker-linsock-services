@@ -45,3 +45,11 @@ Estado: **pendiente, no aplicado**.
 Las imágenes base ya fijan la familia de PHP, la distribución del sistema operativo y la versión del instalador de extensiones. Como siguiente nivel de reproducibilidad se pueden agregar digests SHA-256 a PHP, Nginx y `php-extension-installer`.
 
 Los digests deben obtenerse y validarse para la plataforma AMD64 después de ejecutar builds y pruebas completas. Se recomienda acompañar esta medida con Renovate o Dependabot para proponer actualizaciones periódicas; de lo contrario, las imágenes pueden quedar congeladas y perder correcciones de seguridad.
+
+## Restringir la escritura del contenedor PHP
+
+Estado: **pendiente, no aplicado**.
+
+Actualmente PHP monta la raíz de las aplicaciones con permisos de lectura y escritura porque los frameworks pueden necesitar guardar uploads, cachés y logs. Como endurecimiento futuro, se recomienda montar el código como solo lectura y habilitar escritura únicamente en los directorios que realmente la necesiten, por ejemplo `storage`, `bootstrap/cache`, `var/cache`, `var/log` o un directorio específico de uploads.
+
+Esta restricción debe aplicarse después de identificar y probar los directorios de escritura de cada aplicación. Una configuración incompleta podría impedir uploads, generación de caché o escritura de logs.
