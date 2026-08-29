@@ -1,67 +1,347 @@
 # dkr-php
 
-Este directorio contiene la configuración necesaria para levantar un entorno PHP con Nginx utilizando Docker Compose.
+Entorno Docker para ejecutar dos instancias PHP-FPM aisladas —producción y staging— detrás de un único Nginx.
 
-- **php**: se construye desde `php/Dockerfile` e instala PHP-FPM 8.4 con extensiones comunes y soporte para SQL Server.
-- **nginx**: sirve la aplicación y expone el puerto **8080** en el host.
+## Arquitectura
 
-La imagen PHP incluye Bash para scripts de aplicación, Composer 2.10.2 para administrar dependencias bajo demanda y las herramientas `sqlcmd`/`bcp` de SQL Server disponibles en el `PATH`.
+| Entorno | URL desde el host | Servicio PHP | Código dentro de PHP | Red interna |
+| --- | --- | --- | --- | --- |
+| Producción | `http://localhost:8080/lskprd/` | `php-production` | `/var/www/lskprd` | `production-network` |
+| Staging | `http://localhost:8081/lskdev/` | `php-staging` | `/var/www/lskdev` | `staging-network` |
 
-Las aplicaciones se montan desde las rutas `PHP_APP_PATH_DEV` y `PHP_APP_PATH_PRD` definidas en el archivo `.env` local. Cada variable debe apuntar a la raíz completa de la aplicación, no a su directorio `public`.
+Nginx publica los puertos 8080 y 8081. Los servicios PHP-FPM sólo declaran `expose: 9000`: el puerto 9000 es accesible dentro de su red Docker, pero no queda publicado en el host ni en la red local.
 
-## Estructura
+El aislamiento funciona de la siguiente manera:
 
+- `php-production` sólo monta el código de producción y sólo pertenece a `production-network`.
+- `php-staging` sólo monta el código de staging y sólo pertenece a `staging-network`.
+- Nginx monta ambas aplicaciones como solo lectura y pertenece a las dos redes para enviar cada petición al PHP correcto.
+- El puerto 8080 rechaza `/lskdev` y el puerto 8081 rechaza `/lskprd`.
+- Staging envía `X-Robots-Tag: noindex, nofollow, noarchive`. Esta cabecera no reemplaza la autenticación ni las reglas de firewall.
+
+Se ejecutan tres contenedores, no dos: dos contenedores PHP separados y un contenedor Nginx compartido.
+
+## Variantes disponibles
+
+Hay dos archivos Compose que implementan la misma arquitectura y usan la misma configuración de Nginx:
+
+| Archivo | Imagen PHP | Uso sugerido |
+| --- | --- | --- |
+| `docker-compose.yml` | PHP 8.4 sobre Alpine 3.24 | Opción predeterminada y más compacta para equipos con pocos recursos |
+| `docker-compose.debian.yml` | PHP 8.4 sobre Debian 13 Trixie | Mayor compatibilidad con herramientas o dependencias que esperan Debian/glibc |
+
+No deben levantarse ambas variantes simultáneamente porque las dos intentan publicar los puertos 8080 y 8081.
+
+Todos los comandos de este documento que muestran `docker compose` sin `-f` corresponden a Alpine. Si elegiste Debian, conserva `-f docker-compose.debian.yml` en cada comando de administración, por ejemplo `docker compose -f docker-compose.debian.yml ps`.
+
+Las extensiones instaladas no son completamente idénticas:
+
+- Ambas incluyen `bcmath`, `exif`, `gd`, `intl`, `opcache`, `pcntl`, `pdo_sqlsrv`, `redis`, `sqlsrv` y `zip`.
+- Alpine agrega `ds`.
+- Debian instala explícitamente `mbstring` y `fileinfo`.
+
+Antes de elegir una variante, comprueba las extensiones requeridas por la aplicación con `composer check-platform-reqs`.
+
+## Requisitos
+
+- Docker Engine con Docker Compose v2 en Linux, o Docker Desktop con WSL2 y contenedores Linux en Windows.
+- Procesador Intel/AMD de 64 bits.
+- Puertos 8080 y 8081 libres en el host.
+- Acceso a Internet durante el primer build para descargar imágenes, paquetes y dependencias de Microsoft.
+
+El proyecto declara `platform: linux/amd64` debido a los componentes ODBC de Microsoft. ARM64 no está soportado oficialmente; para macOS ARM se preparará un proyecto separado.
+
+## Estructura esperada de las aplicaciones
+
+Cada variable de `.env` debe apuntar a la raíz completa correspondiente, no directamente a `public`.
+
+```text
+homepage/
+└── index.html
+
+lskprd/
+├── public/
+│   └── index.php
+└── storage/
+    └── app/
+        └── uploads/
+
+lskdev/
+├── public/
+│   └── index.php
+└── storage/
+    └── app/
+        └── uploads/
 ```
-dkr-php/
-├── docker-compose.yml  # orquesta los servicios PHP y Nginx
-├── RECOMENDACIONES.md  # mejoras propuestas todavía no aplicadas
-├── php/
-│   └── Dockerfile      # imagen personalizada con extensiones
-├── data/
-│   └── nginx/
-│       └── default.conf  # configuración de Nginx
-└── README.md
+
+Las carpetas `storage/app/uploads` sólo son obligatorias si las aplicaciones utilizan la ruta de uploads configurada. Otros directorios de escritura, como cachés o logs, dependen del framework.
+
+## Configurar `.env`
+
+El archivo `.env` controla qué carpetas del host se montan en los contenedores:
+
+```dotenv
+PHP_APP_PATH_HME=/opt/web/homepage
+PHP_APP_PATH_PRD=/opt/web/lskprd
+PHP_APP_PATH_DEV=/var/lsk/grn_sysdev
 ```
 
-Estos archivos permiten construir la imagen de PHP, configurar Nginx y levantar el entorno completo con Docker Compose.
+| Variable | Contenido | Acceso desde Nginx | Acceso desde PHP |
+| --- | --- | --- | --- |
+| `PHP_APP_PATH_HME` | Página principal estática | Sólo lectura | No se monta |
+| `PHP_APP_PATH_PRD` | Aplicación de producción | Sólo lectura | Lectura y escritura en `php-production` |
+| `PHP_APP_PATH_DEV` | Aplicación de staging | Sólo lectura | Lectura y escritura en `php-staging` |
 
-Las optimizaciones evaluadas pero todavía no aplicadas se documentan en [RECOMENDACIONES.md](RECOMENDACIONES.md).
+### Ejemplo para Linux
 
-## Requisitos de plataforma
+```dotenv
+PHP_APP_PATH_HME=/srv/linsock/homepage
+PHP_APP_PATH_PRD=/srv/linsock/lskprd
+PHP_APP_PATH_DEV=/srv/linsock/lskdev
+```
 
-Este entorno utiliza contenedores Linux AMD64 debido a las dependencias de Microsoft ODBC incluidas en la imagen PHP.
+Las rutas deben existir antes de iniciar Compose. En Linux, el usuario utilizado por PHP-FPM debe poder escribir en los directorios que necesiten uploads, caché o logs. Es preferible asignar propietario, grupo o ACL adecuados en lugar de usar permisos globales como `chmod 777`.
 
-Plataformas soportadas:
+### Ejemplo para Windows
 
-- Linux con procesador Intel/AMD de 64 bits.
-- Windows con procesador Intel/AMD de 64 bits, Docker Desktop, WSL2 y contenedores Linux.
+Si Docker Compose se ejecuta desde PowerShell o CMD con Docker Desktop:
 
-ARM64 no está soportado oficialmente por este proyecto. En un host ARM, Docker puede intentar ejecutar PHP mediante emulación porque Compose declara `platform: linux/amd64`, pero ese escenario queda fuera del alcance soportado.
+```dotenv
+PHP_APP_PATH_HME=C:/linsock/homepage
+PHP_APP_PATH_PRD=C:/linsock/lskprd
+PHP_APP_PATH_DEV=C:/linsock/lskdev
+```
 
-## Uso
+Si el comando se ejecuta dentro de WSL2, utiliza rutas visibles desde WSL:
 
-1. Ajusta `PHP_APP_PATH_HME`, `PHP_APP_PATH_DEV` y `PHP_APP_PATH_PRD` en `.env`. Las rutas DEV y PRD deben apuntar a la raíz de cada aplicación.
-2. Ejecuta:
-   ```bash
-   docker compose up -d
-   ```
-   Esto iniciará los contenedores `php` y `nginx`.
+```dotenv
+PHP_APP_PATH_HME=/mnt/c/linsock/homepage
+PHP_APP_PATH_PRD=/mnt/c/linsock/lskprd
+PHP_APP_PATH_DEV=/mnt/c/linsock/lskdev
+```
+
+Usa barras `/` y verifica que Docker Desktop tenga permiso para compartir la unidad o carpeta seleccionada.
+
+## Configuración requerida en cada aplicación
+
+Separar contenedores y puertos no es suficiente si ambas aplicaciones comparten configuración interna.
+
+### URL base y subcarpeta
+
+Configura cada aplicación para operar bajo su prefijo:
+
+- Producción: `http://IP_O_HOST:8080/lskprd`
+- Staging: `http://IP_O_HOST:8081/lskdev`
+
+El framework debe generar enlaces, redirecciones y assets conservando `/lskprd` o `/lskdev`. Si se configura la aplicación como si viviera en `/`, las redirecciones o archivos CSS/JavaScript pueden apuntar a una dirección incorrecta.
+
+### Sesiones y cookies
+
+Las cookies se aíslan por dominio y ruta, pero no por puerto. Aunque 8080 y 8081 sean puertos diferentes, configura:
+
+- nombres de cookie distintos para producción y staging;
+- `Path=/lskprd/` en producción;
+- `Path=/lskdev/` en staging;
+- atributos `HttpOnly` y `SameSite` apropiados.
+
+Si posteriormente se habilita HTTPS, agrega también `Secure`.
+
+### Datos y credenciales
+
+Producción y staging deben utilizar de forma independiente:
+
+- bases de datos y usuarios de base de datos;
+- contraseñas y secretos;
+- claves de cifrado de la aplicación;
+- almacenamiento de sesiones y caché;
+- credenciales de correo, APIs y otros servicios externos.
+
+Este stack incluye los controladores y herramientas para conectarse a SQL Server, pero no levanta un servidor SQL Server. La dirección y las credenciales se configuran dentro de cada aplicación.
+
+## Puesta en marcha
+
+Ejecuta los comandos desde el directorio `dkr-php`.
+
+### Alpine, variante predeterminada
+
+Validar la configuración resuelta:
+
+```bash
+docker compose config
+```
+
+Construir e iniciar:
+
+```bash
+docker compose up -d --build
+```
+
+### Debian
+
+Validar la configuración resuelta:
+
+```bash
+docker compose -f docker-compose.debian.yml config
+```
+
+Construir e iniciar:
+
+```bash
+docker compose -f docker-compose.debian.yml up -d --build
+```
+
+Para cambiar de variante, primero detén la que está activa con su mismo archivo Compose:
+
+```bash
+docker compose down
+```
+
+o:
+
+```bash
+docker compose -f docker-compose.debian.yml down
+```
+
+## Acceso
+
+Desde el mismo servidor:
+
+- Página principal: `http://localhost:8080/`
+- Producción: `http://localhost:8080/lskprd/`
+- Staging: `http://localhost:8081/lskdev/`
+
+Desde otra computadora de la red local, reemplaza `localhost` por la IP o nombre del servidor, por ejemplo:
+
+```text
+http://192.168.1.50:8080/lskprd/
+http://192.168.1.50:8081/lskdev/
+```
+
+El firewall del host debe permitir los puertos necesarios. En una instalación real conviene permitir 8081 sólo desde los equipos autorizados para validar staging.
 
 ## Uploads
 
-Las aplicaciones pueden guardar archivos en `storage/app/uploads`. Nginx los publica como contenido estático mediante estas rutas:
+Las aplicaciones escriben los archivos en:
 
-- DEV: `http://localhost:8080/lskdev/uploads/<archivo>`
-- PRD: `http://localhost:8080/lskprd/uploads/<archivo>`
+```text
+storage/app/uploads/
+```
 
-Nginx monta las aplicaciones como solo lectura y rechaza archivos con extensiones PHP dentro de estas rutas. La aplicación sigue siendo responsable de validar el tamaño, el tipo y el nombre de cada archivo subido.
+Nginx los publica como contenido estático en:
 
-## Estado de los servicios
+- Producción: `http://IP_O_HOST:8080/lskprd/uploads/<archivo>`
+- Staging: `http://IP_O_HOST:8081/lskdev/uploads/<archivo>`
 
-PHP-FPM y Nginx tienen healthchecks y una política `restart: unless-stopped`. Nginx espera a que PHP-FPM esté saludable antes de iniciar. El estado HTTP de Nginx se puede consultar en:
+Nginx monta el código como solo lectura, desactiva el listado de directorios y bloquea archivos ocultos y extensiones PHP dentro de uploads. PHP conserva acceso de escritura porque es quien recibe y guarda el archivo.
+
+La aplicación sigue siendo responsable de:
+
+- limitar tamaño y cantidad de archivos;
+- validar contenido, MIME y extensión;
+- generar nombres seguros y evitar colisiones;
+- impedir rutas relativas como `../`;
+- aplicar autorización antes de guardar o entregar información privada.
+
+Esta ruta de Nginx es apropiada para archivos públicos. Los documentos privados no deberían publicarse directamente desde `uploads`; deben entregarse mediante una ruta autenticada de la aplicación o un mecanismo equivalente.
+
+## Operación y comprobaciones
+
+Consultar el estado:
+
+```bash
+docker compose ps
+```
+
+Consultar logs:
+
+```bash
+docker compose logs -f nginx php-production php-staging
+```
+
+Comprobar Nginx:
 
 ```text
 http://localhost:8080/health
+http://localhost:8081/health
 ```
 
-Una respuesta `200 OK` con el texto `ok` confirma que Nginx está activo. El estado detallado de ambos contenedores puede consultarse con `docker compose ps`.
+Ambas direcciones deben responder `200 OK` con `ok`. Los healthchecks son deliberadamente livianos: verifican que Nginx responda en ambos puertos y que el proceso principal de cada PHP-FPM continúe vivo; no prueban la base de datos ni toda la aplicación.
+
+Entrar a un contenedor PHP:
+
+```bash
+docker compose exec php-staging bash
+docker compose exec php-production bash
+```
+
+Ejecutar Composer en cada entorno:
+
+```bash
+docker compose exec php-staging composer install --working-dir=/var/www/lskdev
+docker compose exec php-production composer install --working-dir=/var/www/lskprd --no-dev --optimize-autoloader
+```
+
+Si utilizas Debian, agrega `-f docker-compose.debian.yml` después de `docker compose`, como se indicó al elegir la variante.
+
+Los cambios en los archivos montados desde el host se reflejan sin reconstruir la imagen. Debes reconstruir cuando cambien los Dockerfiles o las dependencias instaladas en la imagen:
+
+```bash
+docker compose up -d --build
+```
+
+## Detención y actualización
+
+Detener sin eliminar los contenedores:
+
+```bash
+docker compose stop
+```
+
+Detener y eliminar contenedores y redes del proyecto:
+
+```bash
+docker compose down
+```
+
+Actualizar imágenes base y reconstruir:
+
+```bash
+docker compose pull nginx
+docker compose build --pull
+docker compose up -d
+```
+
+`docker compose down` no elimina las aplicaciones porque son carpetas del host montadas mediante bind mounts. Este proyecto no define volúmenes Docker con datos persistentes.
+
+## Problemas frecuentes
+
+### El puerto ya está ocupado
+
+Si Compose informa que 8080 o 8081 ya está en uso, detén el proceso o stack que lo ocupa. También puedes cambiar el lado izquierdo del mapeo en ambos archivos Compose, por ejemplo `9081:81`; en ese caso actualiza las URLs configuradas en la aplicación.
+
+### Nginx devuelve 404
+
+Comprueba que:
+
+- la variable `.env` apunta a la raíz correcta;
+- existe `public/index.php`;
+- estás usando `/lskprd/` en 8080 o `/lskdev/` en 8081;
+- la aplicación conserva su prefijo al generar URLs.
+
+### Nginx devuelve 502
+
+Revisa `docker compose ps` y los logs de `php-production` o `php-staging`. Un 502 normalmente indica que Nginx no pudo conectarse al PHP-FPM correspondiente.
+
+### Uploads, caché o logs fallan
+
+Comprueba que la carpeta exista y que PHP-FPM tenga permisos de escritura sobre el bind mount. Nginx no necesita permisos de escritura.
+
+### La aplicación no conecta con SQL Server
+
+Verifica host, puerto, usuario, contraseña, cifrado y certificados en la configuración de la aplicación. Desde el contenedor puedes usar `sqlcmd` para hacer una prueba independiente.
+
+## Seguridad pendiente
+
+La configuración actual usa HTTP y staging queda accesible para cualquier equipo que pueda alcanzar el puerto 8081. Antes de una instalación sensible, evalúa firewall, autenticación para staging y TLS mediante un proxy inverso o una ampliación de Nginx.
+
+Los ajustes de PHP-FPM para poca memoria, límites de `php.ini`, montaje de código PHP como solo lectura y fijación de imágenes por digest están documentados en [RECOMENDACIONES.md](RECOMENDACIONES.md).

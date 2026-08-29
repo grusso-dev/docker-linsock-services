@@ -61,3 +61,22 @@ Estado: **pendiente, no aplicado**.
 Antes de utilizar el stack en producción se recomienda activar `php.ini-production` y definir valores propios para `memory_limit`, `upload_max_filesize`, `post_max_size`, `max_execution_time`, `display_errors` y `log_errors`.
 
 Los límites deben establecerse después de conocer el tamaño real de los uploads, la memoria disponible y el tiempo esperado de las operaciones. Aplicar valores genéricos podría bloquear cargas válidas o permitir que una petición consuma demasiados recursos.
+
+## Proteger el acceso al entorno de staging
+
+Estado: **pendiente, no aplicado**.
+
+Staging ya utiliza un puerto, un contenedor PHP, una red y un montaje diferentes. Sin embargo, cualquier equipo que alcance el puerto 8081 en la red local puede intentar abrirlo. Se recomienda agregar al menos una capa de acceso adicional cuando se conozca la infraestructura del cliente:
+
+- restringir el puerto 8081 mediante el firewall del host o una lista de direcciones IP permitidas; o
+- configurar autenticación HTTP básica en el servidor Nginx de staging.
+
+No se aplica una regla genérica porque las direcciones de red y las credenciales cambian en cada instalación. La cabecera `X-Robots-Tag` evita la indexación voluntaria de buscadores, pero no es un mecanismo de autenticación.
+
+## Completar el aislamiento en la aplicación
+
+Estado: **requiere configuración por aplicación**.
+
+Los puertos TCP no forman parte del alcance de una cookie. Por ello, staging y producción deben utilizar nombres de cookie de sesión diferentes y limitar su atributo `Path` a `/lskdev/` y `/lskprd/`, respectivamente.
+
+También deben usar bases de datos, usuarios, contraseñas, claves de cifrado, almacenamiento de uploads y credenciales de servicios externos independientes. Los contenedores ya aíslan código y redes, pero Docker no puede corregir credenciales compartidas dentro de la configuración de cada aplicación.
