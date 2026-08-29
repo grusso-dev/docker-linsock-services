@@ -2,10 +2,10 @@
 
 Este directorio contiene la configuración necesaria para levantar un entorno PHP con Nginx utilizando Docker Compose.
 
-- **php**: se construye desde `php/Dockerfile` e instala PHP-FPM 8.3 con extensiones comunes y soporte para SQL Server.
+- **php**: se construye desde `php/Dockerfile` e instala PHP-FPM 8.4 con extensiones comunes y soporte para SQL Server.
 - **nginx**: sirve la aplicación y expone el puerto **8080** en el host.
 
-El código de tu aplicación se monta en `/var/www` dentro de los contenedores usando la variable `PHP_APP_PATH` definida en el archivo `.env` local.
+Las aplicaciones se montan desde las rutas `PHP_APP_PATH_DEV` y `PHP_APP_PATH_PRD` definidas en el archivo `.env` local. Cada variable debe apuntar a la raíz completa de la aplicación, no a su directorio `public`.
 
 ## Estructura
 
@@ -24,10 +24,18 @@ Estos archivos permiten construir la imagen de PHP, configurar Nginx y levantar 
 
 ## Uso
 
-1. Ajusta la ruta `PHP_APP_PATH` en `.env` para que apunte al directorio de tu aplicación.
+1. Ajusta `PHP_APP_PATH_HME`, `PHP_APP_PATH_DEV` y `PHP_APP_PATH_PRD` en `.env`. Las rutas DEV y PRD deben apuntar a la raíz de cada aplicación.
 2. Ejecuta:
    ```bash
    docker compose up -d
    ```
    Esto iniciará los contenedores `php` y `nginx`.
 
+## Uploads
+
+Las aplicaciones pueden guardar archivos en `storage/app/uploads`. Nginx los publica como contenido estático mediante estas rutas:
+
+- DEV: `http://localhost:8080/lskdev/uploads/<archivo>`
+- PRD: `http://localhost:8080/lskprd/uploads/<archivo>`
+
+Nginx monta las aplicaciones como solo lectura y rechaza archivos con extensiones PHP dentro de estas rutas. La aplicación sigue siendo responsable de validar el tamaño, el tipo y el nombre de cada archivo subido.
