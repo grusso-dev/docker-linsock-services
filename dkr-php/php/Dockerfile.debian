@@ -1,4 +1,4 @@
-FROM php:8.4-fpm
+FROM php:8.4-fpm-trixie
 
 ENV ACCEPT_EULA=Y
 
@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 # Repositorio Microsoft
 RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
     | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/13/prod trixie main" \
     > /etc/apt/sources.list.d/mssql-release.list
 
 

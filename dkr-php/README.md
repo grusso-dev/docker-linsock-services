@@ -12,6 +12,7 @@ Las aplicaciones se montan desde las rutas `PHP_APP_PATH_DEV` y `PHP_APP_PATH_PR
 ```
 dkr-php/
 ├── docker-compose.yml  # orquesta los servicios PHP y Nginx
+├── RECOMENDACIONES.md  # mejoras propuestas todavía no aplicadas
 ├── php/
 │   └── Dockerfile      # imagen personalizada con extensiones
 ├── data/
@@ -21,6 +22,8 @@ dkr-php/
 ```
 
 Estos archivos permiten construir la imagen de PHP, configurar Nginx y levantar el entorno completo con Docker Compose.
+
+Las optimizaciones evaluadas pero todavía no aplicadas se documentan en [RECOMENDACIONES.md](RECOMENDACIONES.md).
 
 ## Requisitos de plataforma
 

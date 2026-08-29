@@ -1,5 +1,6 @@
 services:
   php:
+    platform: linux/amd64
     build:
       context: ./php
       dockerfile: Dockerfile.debian
