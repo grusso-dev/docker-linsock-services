@@ -1,35 +1,29 @@
 FROM php:8.4-fpm-trixie
 
-ENV ACCEPT_EULA=Y
+ENV ACCEPT_EULA=Y \
+    PATH="${PATH}:/opt/mssql-tools18/bin"
 
-# Dependencias base
-RUN apt-get update && apt-get install -y \
+# Dependencias base y repositorio Microsoft
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    gnupg2 \
+    gnupg \
     ca-certificates \
-    apt-transport-https \
-    libpng-dev \
-    libzip-dev \
-    unzip \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Repositorio Microsoft
-RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
+    && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
     | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/13/prod trixie main" \
-    > /etc/apt/sources.list.d/mssql-release.list
-
-
-# ODBC + tools
-RUN apt-get update && ACCEPT_EULA=Y apt-get install -y \
-    msodbcsql18 \
-    mssql-tools18 \
-    unixodbc-dev \
+    > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y --no-install-recommends \
+        msodbcsql18 \
+        mssql-tools18 \
+    && apt-get purge -y --auto-remove gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # PHP extensions installer
 COPY --from=ghcr.io/mlocati/php-extension-installer:2.11.12 /usr/bin/install-php-extensions /usr/bin/install-php-extensions
+
+# Composer se conserva para administrar dependencias bajo demanda.
+COPY --from=composer:2.10.2 /usr/bin/composer /usr/local/bin/composer
 
 # Extensiones PHP (TCPDF + SQL Server)
 RUN chmod +x /usr/bin/install-php-extensions \

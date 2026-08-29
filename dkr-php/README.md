@@ -5,6 +5,8 @@ Este directorio contiene la configuración necesaria para levantar un entorno PH
 - **php**: se construye desde `php/Dockerfile` e instala PHP-FPM 8.4 con extensiones comunes y soporte para SQL Server.
 - **nginx**: sirve la aplicación y expone el puerto **8080** en el host.
 
+La imagen PHP incluye Bash para scripts de aplicación, Composer 2.10.2 para administrar dependencias bajo demanda y las herramientas `sqlcmd`/`bcp` de SQL Server disponibles en el `PATH`.
+
 Las aplicaciones se montan desde las rutas `PHP_APP_PATH_DEV` y `PHP_APP_PATH_PRD` definidas en el archivo `.env` local. Cada variable debe apuntar a la raíz completa de la aplicación, no a su directorio `public`.
 
 ## Estructura
