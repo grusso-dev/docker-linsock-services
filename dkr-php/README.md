@@ -1,29 +1,30 @@
 # dkr-php
 
-Entorno Docker para ejecutar dos instancias PHP-FPM aisladas —producción y staging— detrás de un único Nginx.
+Entorno Docker para ejecutar producción y staging como dos parejas PHP-FPM/Nginx aisladas.
 
 ## Arquitectura
 
-| Entorno | URL desde el host | Servicio PHP | Código dentro de PHP | Red interna |
-| --- | --- | --- | --- | --- |
-| Producción | `http://localhost:8080/lskprd/` | `php-production` | `/var/www/lskprd` | `production-network` |
-| Staging | `http://localhost:8081/lskdev/` | `php-staging` | `/var/www/lskdev` | `staging-network` |
+| Entorno | URL desde el host | Servicio Nginx | Servicio PHP | Código dentro de PHP | Red interna |
+| --- | --- | --- | --- | --- | --- |
+| Producción | `http://localhost:8080/lskprd/` | `nginx-production` | `php-production` | `/var/www/lskprd` | `production-network` |
+| Staging | `http://localhost:8081/lskdev/` | `nginx-staging` | `php-staging` | `/var/www/lskdev` | `staging-network` |
 
-Nginx publica los puertos 8080 y 8081. Los servicios PHP-FPM sólo declaran `expose: 9000`: el puerto 9000 es accesible dentro de su red Docker, pero no queda publicado en el host ni en la red local.
+`nginx-production` publica el puerto 8080 y `nginx-staging` publica el 8081. Los servicios PHP-FPM sólo declaran `expose: 9000`: el puerto 9000 es accesible dentro de su red Docker, pero no queda publicado en el host ni en la red local.
 
 El aislamiento funciona de la siguiente manera:
 
 - `php-production` sólo monta el código de producción y sólo pertenece a `production-network`.
 - `php-staging` sólo monta el código de staging y sólo pertenece a `staging-network`.
-- Nginx monta ambas aplicaciones como solo lectura y pertenece a las dos redes para enviar cada petición al PHP correcto.
+- `nginx-production` sólo monta la página principal y producción como solo lectura, y depende únicamente de `php-production`.
+- `nginx-staging` sólo monta staging como solo lectura, y depende únicamente de `php-staging`.
 - El puerto 8080 rechaza `/lskdev` y el puerto 8081 rechaza `/lskprd`.
 - Staging envía `X-Robots-Tag: noindex, nofollow, noarchive`. Esta cabecera no reemplaza la autenticación ni las reglas de firewall.
 
-Se ejecutan tres contenedores, no dos: dos contenedores PHP separados y un contenedor Nginx compartido.
+Se ejecutan cuatro contenedores: dos PHP-FPM y dos Nginx. Si staging falla durante el arranque o su Nginx tiene una configuración inválida, la pareja de producción puede continuar disponible.
 
 ## Variantes disponibles
 
-Hay dos archivos Compose que implementan la misma arquitectura y usan la misma configuración de Nginx:
+Hay dos archivos Compose que implementan la misma arquitectura y usan las configuraciones `data/nginx/production.conf` y `data/nginx/staging.conf`:
 
 | Archivo | Imagen PHP | Uso sugerido |
 | --- | --- | --- |
@@ -251,7 +252,7 @@ docker compose ps
 Consultar logs:
 
 ```bash
-docker compose logs -f nginx php-production php-staging
+docker compose logs -f nginx-production php-production nginx-staging php-staging
 ```
 
 Comprobar Nginx:
@@ -261,7 +262,7 @@ http://localhost:8080/health
 http://localhost:8081/health
 ```
 
-Ambas direcciones deben responder `200 OK` con `ok`. Los healthchecks son deliberadamente livianos: verifican que Nginx responda en ambos puertos y que el proceso principal de cada PHP-FPM continúe vivo; no prueban la base de datos ni toda la aplicación.
+Ambas direcciones deben responder `200 OK` con `ok`. Cada Nginx y su PHP tienen healthchecks independientes. Las comprobaciones son deliberadamente livianas: verifican que cada Nginx responda y que el proceso principal de cada PHP-FPM continúe vivo; no prueban la base de datos ni toda la aplicación.
 
 Entrar a un contenedor PHP:
 
@@ -302,7 +303,7 @@ docker compose down
 Actualizar imágenes base y reconstruir:
 
 ```bash
-docker compose pull nginx
+docker compose pull nginx-production nginx-staging
 docker compose build --pull
 docker compose up -d
 ```
