@@ -121,6 +121,10 @@ PHP_APP_PATH_DEV=/srv/linsock/lskdev
 
 Las rutas deben existir antes de iniciar Compose. En Linux, el usuario utilizado por PHP-FPM debe poder escribir en los directorios que necesiten uploads, caché o logs. Es preferible asignar propietario, grupo o ACL adecuados en lugar de usar permisos globales como `chmod 777`.
 
+La guía [PERMISOS.md](PERMISOS.md) explica la configuración recomendada para
+usuarios de Git y SFTP/FTP, los UID de PHP y Nginx, ACL, archivos creados con
+`sudo`, Windows y comandos de diagnóstico.
+
 ### Ejemplo para Windows
 
 Si Docker Compose se ejecuta desde PowerShell o CMD con Docker Desktop:
@@ -222,6 +226,71 @@ o:
 ```bash
 docker compose -f docker-compose.debian.yml down
 ```
+
+## Iniciar un solo entorno
+
+Producción y staging pueden ejecutarse de forma independiente. Al iniciar un servicio Nginx, Compose inicia automáticamente su PHP porque está declarado en `depends_on`.
+
+### Sólo staging
+
+En la primera ejecución con Alpine, construye su imagen PHP e inicia la pareja:
+
+```bash
+docker compose build php-staging
+docker compose up -d nginx-staging
+```
+
+Staging queda disponible en:
+
+```text
+http://localhost:8081/lskdev/
+```
+
+Con Debian:
+
+```bash
+docker compose -f docker-compose.debian.yml build php-staging
+docker compose -f docker-compose.debian.yml up -d nginx-staging
+```
+
+### Sólo producción
+
+En la primera ejecución con Alpine:
+
+```bash
+docker compose build php-production
+docker compose up -d nginx-production
+```
+
+Producción y la página principal quedan disponibles en:
+
+```text
+http://localhost:8080/
+http://localhost:8080/lskprd/
+```
+
+Con Debian:
+
+```bash
+docker compose -f docker-compose.debian.yml build php-production
+docker compose -f docker-compose.debian.yml up -d nginx-production
+```
+
+Si la imagen PHP correspondiente ya existe localmente, omite el comando `build`.
+
+Para detener solamente staging:
+
+```bash
+docker compose stop nginx-staging php-staging
+```
+
+Para detener solamente producción:
+
+```bash
+docker compose stop nginx-production php-production
+```
+
+Si utilizas Debian, agrega `-f docker-compose.debian.yml` a los comandos `stop`. No uses `docker compose down` para detener un solo entorno: `down` elimina los contenedores y redes de todo el proyecto Compose, incluido el otro entorno.
 
 ## Publicar una nueva imagen PHP
 
@@ -444,6 +513,9 @@ Revisa `docker compose ps` y los logs de `php-production` o `php-staging`. Un 50
 ### Uploads, caché o logs fallan
 
 Comprueba que la carpeta exista y que PHP-FPM tenga permisos de escritura sobre el bind mount. Nginx no necesita permisos de escritura.
+
+Consulta [PERMISOS.md](PERMISOS.md) para comprobar los UID, aplicar permisos
+base o conceder una ACL únicamente a los directorios escribibles.
 
 ### La aplicación no conecta con SQL Server
 
