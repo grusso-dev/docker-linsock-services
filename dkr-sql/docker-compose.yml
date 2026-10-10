@@ -1,15 +1,40 @@
 services:
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: sql_server
+    image: ${SQL_IMAGE:?Fija una imagen de SQL Server 2022 para produccion}
+    restart: unless-stopped
+    stop_grace_period: 2m
     environment:
-      SA_PASSWORD: "${SA_PASSWORD}"
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD:?Configura SA_PASSWORD}
+      MSSQL_PID: ${MSSQL_PID:?Configura la edicion/licencia de SQL Server}
       ACCEPT_EULA: "Y"
     volumes:
       - ./data/sqlserver/sql_data:/var/opt/mssql
-      - ${SQL_BACKUP_PATH}:/var/opt/mssql/backups
+      - ${SQL_BACKUP_PATH:?Configura una ruta absoluta de backups}:/var/opt/mssql/backups
     ports:
-      - "1433:1433"
+      - "${SQL_BIND_IP:?Configura la IP del host para acceso remoto}:1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/1433'"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+    networks:
+      - sql-network
+
+  sql-backup:
+    build: ./backup
+    restart: unless-stopped
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      SQL_SERVER: sqlserver
+      SQL_DB: ${SQL_DB:?Configura SQL_DB}
+      SQL_USER: ${SQL_USER:-sa}
+      SA_PASSWORD: ${SA_PASSWORD:?Configura SA_PASSWORD}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
+    volumes:
+      - ${SQL_BACKUP_PATH:?Configura una ruta absoluta de backups}:/backups
     networks:
       - sql-network
 

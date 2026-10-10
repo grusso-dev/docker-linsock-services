@@ -1,2 +1,2 @@
-# Realiza el backup cada día a las 2:00 AM
-0 2 * * * /usr/local/bin/backup.sh >> /var/log/cron.log 2>&1
+# Todos los dias a las 02:00 UTC. Formato /etc/cron.d: incluye el usuario.
+0 2 * * * root /usr/local/bin/backup.sh >> /proc/1/fd/1 2>&1

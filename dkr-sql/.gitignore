@@ -1,0 +1,2 @@
+# Datos y backups locales del escenario; no incluirlos en commits.
+data/
